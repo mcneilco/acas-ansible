@@ -1,0 +1,15 @@
+---
+- hosts: localhost              #define 'docker' as our action target
+  gather_facts: False
+  serial: 1          #define the action will be done one by one
+  roles:
+  - role: cloud     #define 'cloud' role should be apply to hosts
+- hosts: acas              #define 'docker' as our action target
+  remote_user: "{{remote_user}}" #define user account for ssh login
+  become: yes
+  become_method: sudo
+  serial: 1          #define the action will be done one by one
+  roles:
+  - role: common     #define 'common' role should be apply to hosts
+  - role: docker     #define 'docker' role should be apply to hosts
+  - role: acas       #define 'acas' role should be apply to hosts

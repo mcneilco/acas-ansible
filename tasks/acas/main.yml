@@ -1,0 +1,193 @@
+- name: Install Git
+  package:
+    name: "git"
+    state: "present"
+  tags:
+    - "install git"
+- name: Ensure .ssh directory exists
+  file:
+    path: /home/acas/.ssh
+    state: directory
+    mode: 0700
+    owner: acas
+    group: docker
+- name: Ensure GitHub deploy key is present on the server
+  copy:
+    content: "{{ acas_custom_deploykey }}"
+    dest: /home/acas/.ssh/acas_custom_deploykey
+    mode: 0600
+    owner: acas
+    group: docker
+  tags:
+    - deploykey
+- name: Set permissions on {{ acas_install_directory }}
+  file:
+    path: "{{ acas_install_directory }}/{{ item }}"
+    group: docker
+    owner: acas
+    recurse: yes
+  with_items:
+    - acas_custom
+- name: Add a postgres group with same gid as docker postgres
+  group:
+    name: postgres
+    state: present
+    gid: 499
+- name: Add a postgres user with same uid/gid as docker postgres
+  user:
+    name: postgres
+    group: postgres
+    comment: postgres
+    uid: 499
+- name: Set permissions on {{ acas_install_directory }}/dbstore
+  file:
+    path: "{{ acas_install_directory }}/dbstore"
+    group: postgres
+    owner: postgres
+    recurse: yes
+- name: Set permissions on {{ acas_install_directory }}/filestore
+  file:
+    path: "{{ acas_install_directory }}/filestore"
+    state: directory
+    group: centos
+    owner: centos
+    recurse: yes
+- name: Clone {{ acas_custom_gitrepo }} to {{ acas_install_directory }}/acas_custom
+  git:
+    repo: "{{ acas_custom_gitrepo }}"
+    dest: "{{ acas_install_directory }}/acas_custom"
+    accept_hostkey: yes
+    key_file: /home/acas/.ssh/acas_custom_deploykey
+    force: yes
+    update: yes
+  become_user: acas
+- name: Run template on acas_custom files
+  run_once: true
+  fetch:
+    src: "{{ acas_install_directory }}/acas_custom/{{item}}"
+    dest: /tmp/{{item}}
+    flat: yes
+    fail_on_missing: yes
+  with_items:
+    - conf/zzz-config.properties
+    - conf/applicationContext-security.xml
+    - docker-compose.yml
+    - modules/CmpdReg/src/client/custom/configuration.json
+- name: Set variables in templates
+  template :
+    src   : /tmp/{{item}}
+    dest  : "{{ acas_install_directory }}/acas_custom/{{item}}"
+    owner : acas
+    group : docker
+  with_items:
+    - conf/zzz-config.properties
+    - docker-compose.yml
+    - modules/CmpdReg/src/client/custom/configuration.json
+- name: Set variables in templates
+  template :
+    src   : /tmp/{{item}}
+    dest  : "{{ acas_install_directory }}/acas_custom/{{item}}"
+    owner : acas
+    group : docker
+  with_items:
+    - conf/applicationContext-security.xml
+  when: acas_authstrategy == "ldap"
+- name: Remove application context if acas auth
+  lineinfile:
+    path: "{{ acas_install_directory }}/acas_custom/docker-compose.yml"
+    state: absent
+    regexp: 'applicationContext-security.xml'
+  when: acas_authstrategy != "ldap"
+- name: Get ACAS dot files git repo
+  git:
+    repo: 'https://github.com/mcneilco/acas-dotfiles.git'
+    dest: '/etc/profile.d/acas-dotfiles'
+- name: Install dot files
+  command: cp /etc/profile.d/acas-dotfiles/system/acas.sh /etc/profile.d
+- name: Docker login
+  command: docker login -u {{ acas_docker_login_user }} -p {{ acas_docker_login_password }}
+  become: yes
+  become_user: acas
+- name: Make dbstore folder
+  file:
+    path: "{{ acas_install_directory }}/dbstore"
+    state: directory
+    group: postgres
+    owner: postgres
+- name: Install docker python package
+  pip:
+    name: [docker, docker-compose]
+    extra_args: --user
+  become: yes
+  become_user: acas
+  tags: 
+    - start-acas
+- name: Run docker compose down (remove volumes yes, this won't remove the database or filestore)
+  docker_service:
+    project_src: "{{ acas_install_directory }}/acas_custom"
+    state: absent
+    remove_volumes: yes
+  become: yes
+  become_user: acas
+  tags: 
+    - start-acas
+- name: Run docker compose up
+  docker_service:
+    project_src: "{{ acas_install_directory }}/acas_custom"
+    state: present
+    # pull: yes #ansible bug currently breaking pull
+  become: yes
+  become_user: acas
+  tags: 
+    - start-acas
+- name: Pause for 2 minutes
+  pause:
+    minutes: 2
+  tags:
+    - restore-acas
+  when: restore is defined
+- name: Restart services
+  docker_service:
+    project_src: "{{ acas_install_directory }}/acas_custom"
+    state: present
+    services:
+      - acas
+    restarted: yes  
+  become: yes
+  become_user: acas
+  tags:
+    - restore-acas
+  when: restore is defined
+- name: Run database restore with {{ restore }}
+  shell: |
+    /usr/local/bin/docker-compose exec backup ./backup.sh restore {{ restore }}
+  args:
+    chdir: "{{ acas_install_directory }}/acas_custom"
+  become: yes
+  become_user: acas
+  when: restore is defined
+  register: restore_result
+  tags:
+    - restore-acas
+- debug: msg="{{ restore_result.stdout.split('\n')[:-1] }}"
+  when: restore is defined
+  tags:
+    - restore-acas
+- name: Pause for 2 minutes
+  pause:
+    minutes: 2
+  when: restore is not defined
+- name: Restart services
+  docker_service:
+    project_src: "{{ acas_install_directory }}/acas_custom"
+    state: present
+    services:
+      - acas
+      - rservices
+      - tomcat
+    restarted: yes  
+  become: yes
+  become_user: acas
+  tags:
+    - start-acas
+    - restore-acas

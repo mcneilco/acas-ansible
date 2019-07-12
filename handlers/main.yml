@@ -1,0 +1,12 @@
+---
+# handlers file for ansible-acas-docker
+- name: reboot
+  reboot:
+- name: Restart sshd
+  service:
+    name: sshd
+    state: restarted
+- name: restart docker
+  service: "name=docker state={{ docker_restart_handler_state }}"
+- name: restart docker-volume-local-persist
+  service: "name=docker-volume-local-persist state={{ local_persist_restart_handler_state }}"

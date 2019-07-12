@@ -1,0 +1,18 @@
+# Disable SELinux
+- name: List of all hosts
+  debug:
+    msg: "{{ play_hosts }}"
+- name: Disable selinux
+  selinux:
+    state: disabled
+  notify: reboot
+- name: Set hostname to {{ acas_fqdn }}
+  hostname:
+    name: "{{ acas_fqdn }}"
+  notify: reboot
+- name: Reboot now
+  meta: flush_handlers
+- name: Install pip
+  easy_install:
+    name: pip
+    state: latest

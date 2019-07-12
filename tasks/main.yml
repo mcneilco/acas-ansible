@@ -1,0 +1,6 @@
+---
+- name: "(Install: CentOS/RedHat Install ACAS"
+  block:
+    - import_tasks: common/main.yml
+    - import_tasks: docker/main.yml
+    - import_tasks: acas/main.yml

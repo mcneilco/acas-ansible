@@ -1,0 +1,17 @@
+- name: Populate service facts (gets info about services already on the machine)
+  service_facts:
+- debug:
+    msg: docker volume local persist already installed
+  when: "'docker-volume-local-persist.service' in services"
+- name: Install Local Persist (if configured). Download install script
+  get_url:
+    url: https://raw.githubusercontent.com/CWSpear/local-persist/master/scripts/install.sh
+    dest: /tmp/install.sh
+    mode: 0755
+  when: "'docker-volume-local-persist.service' not in services"
+- name: Install Local persist
+  shell: /tmp/install.sh
+  when: "'docker-volume-local-persist.service' not in services"
+- name: Remove local persist install script
+  file: path=/tmp/install.sh state=absent
+  when: "'docker-volume-local-persist.service' not in services"
