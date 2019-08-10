@@ -185,6 +185,7 @@
       - acas
       - rservices
       - tomcat
+      - nginx
     restarted: yes  
   become: yes
   become_user: acas

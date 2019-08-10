@@ -7,7 +7,16 @@ stack_name: "{{ company }}-{{ env }}"
 acas_fqdn: "{{ company }}-{{ env }}.onacaslims.com"
 livedesign_fqdn: "{{ company }}-{{ env }}.onschrodinger.com"
 livedesign_private_ip: 10.100.54.11
-acas_authstrategy: acas
+acas_authstrategy: database
+
+# email for password resets coming from acas when auth strategy is set to acas
+email_host: smtp.gmail.com
+email_port: 587
+email_auth: true
+email_ssl: true
+email_tls: true
+email_user:
+email_password:
 
 run_backups: false
 # Uncomment the next line and run ansible when you want to start test from a backup of prod
