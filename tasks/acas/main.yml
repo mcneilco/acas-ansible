@@ -192,3 +192,18 @@
   tags:
     - start-acas
     - restore-acas
+- name: Add update certs script
+  template:
+    src: templates/updatecerts.sh
+    dest: "{{ acas_install_directory }}/updatecerts.sh"
+  tags:
+    - update-certs
+- name: Check for updated certs nightly cron using certs update script
+  cron:
+    name: "check and update certs"
+    minute: "0"
+    hour: "0"
+    user: acas
+    job: "/bin/bash {{ acas_install_directory }}/updatecerts.sh > /dev/null"
+  tags:
+    - update-certs
