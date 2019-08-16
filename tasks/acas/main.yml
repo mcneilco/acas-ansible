@@ -207,3 +207,64 @@
     job: "/bin/bash {{ acas_install_directory }}/updatecerts.sh > /dev/null"
   tags:
     - update-certs
+- name: Add api views installation script
+  template:
+    src: templates/copy_api_views_to_db_container.sh
+    dest: "{{ acas_install_directory }}/acas_custom/copy_api_views_to_db_container.sh"
+    owner : acas
+    group : docker
+    mode: 0777
+  when: install_api_views
+  tags:
+    - api-views
+- name: Add api views sql script
+  template:
+    src: templates/api_views.sql
+    dest: "{{ acas_install_directory }}/acas_custom/api_views.sql"
+    owner : acas
+    group : docker
+  when: install_api_views
+  tags:
+    - api-views
+- name: Execute the api views installation script
+  command: "{{ acas_install_directory }}/acas_custom/copy_api_views_to_db_container.sh"
+  args:
+    chdir: "{{ acas_install_directory }}/acas_custom"
+  become: yes
+  become_user: acas
+  when: install_api_views
+  tags:
+    - api-views
+- name: Add cron for api_analysis_group_results 
+  cron:
+    name: "update materialized views api_analysis_group_results"
+    minute: "*/1"
+    hour: "*"
+    user: acas
+    job: "cd /vol/acas/acas_custom && /usr/local/bin/docker-compose exec db psql -U readonly acas -c \"REFRESH MATERIALIZED VIEW CONCURRENTLY api_analysis_group_results_mv; REFRESH MATERIALIZED VIEW CONCURRENTLY api_dose_response_mv;\"  > /dev/null 2>&1 || true"
+  when: install_api_views
+  tags:
+    - api-views
+    - api-views-cron
+- name: Add cron for api_salt_form 
+  cron:
+    name: "update materialized views api_salt_form"
+    minute: "*/5"
+    hour: "*"
+    user: acas
+    job: "cd /vol/acas/acas_custom && /usr/local/bin/docker-compose exec db psql -U readonly acas -c \"REFRESH MATERIALIZED VIEW CONCURRENTLY api_salt_form_corp_name; REFRESH MATERIALIZED VIEW CONCURRENTLY api_salt_form_mv;REFRESH MATERIALIZED VIEW CONCURRENTLY api_salt_form_assoc_mv;\"   > /dev/null 2>&1 || true"
+  when: install_api_views
+  tags:
+    - api-views
+    - api-views-cron
+- name: Add cron for api_aliquot_inventory 
+  cron:
+    name: "update materialized views api_aliquot_inventory"
+    minute: "*/5"
+    hour: "*"
+    user: acas
+    job: "cd /vol/acas/acas_custom && /usr/local/bin/docker-compose exec db psql -U readonly acas -c psql -c \"REFRESH MATERIALIZED VIEW CONCURRENTLY api_aliquot_inventory_mv;\"   > /dev/null 2>&1 || true"
+  when: install_api_views
+  tags:
+    - api-views
+    - api-views-cron

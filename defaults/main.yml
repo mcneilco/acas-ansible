@@ -76,3 +76,5 @@ acas_custom_gitrepo: git@bitbucket.org:{{ company }}/acas_custom.git
 
 # Key file for ansible operations
 ansible_ssh_private_key_file: ~/.ssh/acas-{{ company }}.pem
+
+install_api_views: true
