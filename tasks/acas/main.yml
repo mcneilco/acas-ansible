@@ -118,12 +118,13 @@
   pip:
     name: [docker, docker-compose]
     extra_args: --user
+    state: latest
   become: yes
   become_user: acas
   tags: 
     - start-acas
 - name: Run docker compose down (remove volumes yes, this won't remove the database or filestore)
-  docker_service:
+  docker_compose:
     project_src: "{{ acas_install_directory }}/acas_custom"
     state: absent
     remove_volumes: yes
@@ -132,7 +133,7 @@
   tags: 
     - start-acas
 - name: Run docker compose up
-  docker_service:
+  docker_compose:
     project_src: "{{ acas_install_directory }}/acas_custom"
     state: present
     # pull: yes #ansible bug currently breaking pull
@@ -140,6 +141,16 @@
   become_user: acas
   tags: 
     - start-acas
+- name: Docker prune everything (including non-dangling images)
+  docker_prune:
+    images: yes
+    images_filters:
+      dangling: false
+    networks: yes
+    volumes: yes
+    builder_cache: yes
+  become: yes
+  become_user: acas
 - name: Pause for 2 minutes
   pause:
     minutes: 2
@@ -147,11 +158,12 @@
     - restore-acas
   when: restore is defined
 - name: Restart services
-  docker_service:
+  docker_compose:
     project_src: "{{ acas_install_directory }}/acas_custom"
     state: present
     services:
       - acas
+      - rservices
     restarted: yes  
   become: yes
   become_user: acas
@@ -178,7 +190,7 @@
     minutes: 2
   when: restore is not defined
 - name: Restart services
-  docker_service:
+  docker_compose:
     project_src: "{{ acas_install_directory }}/acas_custom"
     state: present
     services:

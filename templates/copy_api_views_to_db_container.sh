@@ -4,7 +4,7 @@ if [ -f .env ]; then
 fi;
 folder=$(basename $(pwd));
 project=${COMPOSE_PROJECT_NAME:-$folder};
-parsed=$(echo "${project//[^A-Za-z0-9 ]/}" | tr [:upper:] [:lower:]);
+parsed=$(echo "${project//[^A-Za-z0-9_ ]/}" | tr [:upper:] [:lower:]);
 container=$parsed'_db_1';
 while [ "`docker inspect -f {% raw %}'{{.State.Running}}' {% endraw %} $container`" != "true" ]; do 
    echo "waiting on the db to start";
