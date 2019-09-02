@@ -123,9 +123,29 @@
   become_user: acas
   tags: 
     - start-acas
+- name: Get docker-compose project name
+  shell: |
+     if [ -f .env ]; then 
+       . .env; 
+     fi;
+     folder=$(basename $(pwd));
+     project=${COMPOSE_PROJECT_NAME:-$folder};
+     project=$(echo "${project//[^A-Za-z0-9_ ]/}" | tr [:upper:] [:lower:]);
+     echo $project;
+  args:
+    chdir: "{{ acas_install_directory }}/acas_custom"
+    executable: /bin/bash
+  register: compose_project
+  tags:
+    - compose-project
+- name: Docker compose project
+  debug:
+    var: compose_project.stdout
+  tags:
+    - compose-project
 - name: Get info on old docker network
   docker_network_info:
-    name: acas_custom_default
+    name: "{{ compose_project.stdout }}_default"
   register: docker_old_network_info
   become: yes
   become_user: acas
@@ -268,7 +288,7 @@
     - pg-hba-conf
 - name: Get info on docker network
   docker_network_info:
-    name: acas_custom_default
+    name: "{{ compose_project.stdout }}_default"
   register: docker_network_info
   become: yes
   become_user: acas
