@@ -253,15 +253,6 @@
     job: "/bin/bash {{ acas_install_directory }}/updatecerts.sh > /dev/null"
   tags:
     - update-certs
-- name: Check for updated certs nightly cron using certs update script
-  cron:
-    name: "check and update certs"
-    minute: "0"
-    hour: "0"
-    user: root
-    job: "/bin/bash {{ acas_install_directory }}/updatecerts.sh > /dev/null"
-  tags:
-    - update-certs
 - name: Execute the certs update script (adds postgres certs)
   command: "/bin/bash {{ acas_install_directory }}/updatecerts.sh"
   become: yes
