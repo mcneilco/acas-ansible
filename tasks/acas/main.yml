@@ -123,8 +123,22 @@
   become_user: acas
   tags: 
     - start-acas
+- name: Get info on old docker network
+  docker_network_info:
+    name: acas_custom_default
+  register: docker_old_network_info
+  become: yes
+  become_user: acas
+  tags:
+    - pg-hba-conf
+- name: Old docker network info
+  debug:
+    var: docker_old_network_info.network
+  when: docker_old_network_info.exists
+  tags:
+    - pg-hba-conf
 - name: Run docker compose down (remove volumes yes, this won't remove the database or filestore)
-  docker_compose:
+  docker_service:
     project_src: "{{ acas_install_directory }}/acas_custom"
     state: absent
     remove_volumes: yes
@@ -133,7 +147,7 @@
   tags: 
     - start-acas
 - name: Run docker compose up
-  docker_compose:
+  docker_service:
     project_src: "{{ acas_install_directory }}/acas_custom"
     state: present
     # pull: yes #ansible bug currently breaking pull
@@ -158,7 +172,7 @@
     - restore-acas
   when: restore is defined
 - name: Restart services
-  docker_compose:
+  docker_service:
     project_src: "{{ acas_install_directory }}/acas_custom"
     state: present
     services:
@@ -190,7 +204,7 @@
     minutes: 2
   when: restore is not defined
 - name: Restart services
-  docker_compose:
+  docker_service:
     project_src: "{{ acas_install_directory }}/acas_custom"
     state: present
     services:
@@ -215,10 +229,86 @@
     name: "check and update certs"
     minute: "0"
     hour: "0"
-    user: acas
+    user: root
     job: "/bin/bash {{ acas_install_directory }}/updatecerts.sh > /dev/null"
   tags:
     - update-certs
+- name: Check for updated certs nightly cron using certs update script
+  cron:
+    name: "check and update certs"
+    minute: "0"
+    hour: "0"
+    user: root
+    job: "/bin/bash {{ acas_install_directory }}/updatecerts.sh > /dev/null"
+  tags:
+    - update-certs
+- name: Execute the certs update script (adds postgres certs)
+  command: "/bin/bash {{ acas_install_directory }}/updatecerts.sh"
+  become: yes
+  tags:
+    - update-certs
+- name: Revoke all postgres md5 rules
+  postgresql_pg_hba:
+    dest: "{{ acas_install_directory }}/dbstore/pg_hba.conf"
+    method: md5
+    state: absent
+  tags:
+    - postgres-ssl-users
+    - pg-hba-conf
+    - pg-hba-conf-revoke
+- name: Configure postgres ssl users
+  postgresql_pg_hba:
+    dest: "{{ acas_install_directory }}/dbstore/pg_hba.conf"
+    contype: hostssl
+    users: "{{ postgres_ssl_remote_users|join(', ') }}"
+    databases: all
+    source: 0.0.0.0/0
+  tags:
+    - postgres-ssl-users
+    - pg-hba-conf
+- name: Get info on docker network
+  docker_network_info:
+    name: acas_custom_default
+  register: docker_network_info
+  become: yes
+  become_user: acas
+  tags:
+    - pg-hba-conf
+- name: Print information about docker network
+  debug:
+    var: docker_network_info.network
+  when: docker_network_info.exists
+  tags:
+    - pg-hba-conf
+- name: Revoke old docker network from non ssl connections to postgres database
+  postgresql_pg_hba:
+    dest: "{{ acas_install_directory }}/dbstore/pg_hba.conf"
+    contype: host
+    users: all
+    databases: all
+    source: "{{ docker_old_network_info.network.IPAM.Config[0].Subnet }}"
+    state: absent
+  when: docker_old_network_info.exists
+  tags:
+    - pg-hba-conf
+- name: Configure postgres non ssl connections (within docker network)
+  postgresql_pg_hba:
+    dest: "{{ acas_install_directory }}/dbstore/pg_hba.conf"
+    contype: host
+    users: all
+    databases: all
+    source: "{{ docker_network_info.network.IPAM.Config[0].Subnet }}"
+  tags:
+    - pg-hba-conf
+- name: Restart services
+  docker_service:
+    project_src: "{{ acas_install_directory }}/acas_custom"
+    state: present
+    restarted: yes  
+  become: yes
+  become_user: acas
+  tags:
+    - pg-hba-conf
 - name: Add api views installation script
   template:
     src: templates/copy_api_views_to_db_container.sh
