@@ -138,11 +138,13 @@
   register: compose_project
   tags:
     - compose-project
+    - pg-hba-conf
 - name: Docker compose project
   debug:
     var: compose_project.stdout
   tags:
     - compose-project
+    - pg-hba-conf
 - name: Get info on old docker network
   docker_network_info:
     name: "{{ compose_project.stdout }}_default"
@@ -158,7 +160,7 @@
   tags:
     - pg-hba-conf
 - name: Run docker compose down (remove volumes yes, this won't remove the database or filestore)
-  docker_service:
+  docker_compose:
     project_src: "{{ acas_install_directory }}/acas_custom"
     state: absent
     remove_volumes: yes
@@ -167,7 +169,7 @@
   tags: 
     - start-acas
 - name: Run docker compose up
-  docker_service:
+  docker_compose:
     project_src: "{{ acas_install_directory }}/acas_custom"
     state: present
     # pull: yes #ansible bug currently breaking pull
@@ -192,7 +194,7 @@
     - restore-acas
   when: restore is defined
 - name: Restart services
-  docker_service:
+  docker_compose:
     project_src: "{{ acas_install_directory }}/acas_custom"
     state: present
     services:
@@ -224,7 +226,7 @@
     minutes: 2
   when: restore is not defined
 - name: Restart services
-  docker_service:
+  docker_compose:
     project_src: "{{ acas_install_directory }}/acas_custom"
     state: present
     services:
@@ -258,15 +260,6 @@
   become: yes
   tags:
     - update-certs
-- name: Revoke all postgres md5 rules
-  postgresql_pg_hba:
-    dest: "{{ acas_install_directory }}/dbstore/pg_hba.conf"
-    method: md5
-    state: absent
-  tags:
-    - postgres-ssl-users
-    - pg-hba-conf
-    - pg-hba-conf-revoke
 - name: Configure postgres ssl users
   postgresql_pg_hba:
     dest: "{{ acas_install_directory }}/dbstore/pg_hba.conf"
@@ -312,7 +305,7 @@
   tags:
     - pg-hba-conf
 - name: Restart services
-  docker_service:
+  docker_compose:
     project_src: "{{ acas_install_directory }}/acas_custom"
     state: present
     restarted: yes  
