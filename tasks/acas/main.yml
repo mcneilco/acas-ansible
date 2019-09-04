@@ -49,8 +49,8 @@
   file:
     path: "{{ acas_install_directory }}/filestore"
     state: directory
-    group: centos
-    owner: centos
+    group: acas
+    owner: acas
     recurse: yes
 - name: Clone {{ acas_custom_gitrepo }} to {{ acas_install_directory }}/acas_custom
   git:
