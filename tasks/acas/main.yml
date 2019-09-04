@@ -168,6 +168,26 @@
   become_user: acas
   tags: 
     - start-acas
+- name: Add update certs script
+  template:
+    src: templates/updatecerts.sh
+    dest: "{{ acas_install_directory }}/updatecerts.sh"
+  tags:
+    - update-certs
+- name: Check for updated certs nightly cron using certs update script
+  cron:
+    name: "check and update certs"
+    minute: "0"
+    hour: "0"
+    user: root
+    job: "/bin/bash {{ acas_install_directory }}/updatecerts.sh > /dev/null 2>&1 || true"
+  tags:
+    - update-certs
+- name: Execute the certs update script (adds postgres certs)
+  command: "/bin/bash {{ acas_install_directory }}/updatecerts.sh"
+  become: yes
+  tags:
+    - update-certs
 - name: Run docker compose up
   docker_compose:
     project_src: "{{ acas_install_directory }}/acas_custom"
@@ -240,24 +260,6 @@
   tags:
     - start-acas
     - restore-acas
-- name: Add update certs script
-  template:
-    src: templates/updatecerts.sh
-    dest: "{{ acas_install_directory }}/updatecerts.sh"
-  tags:
-    - update-certs
-- name: Check for updated certs nightly cron using certs update script
-  cron:
-    name: "check and update certs"
-    minute: "0"
-    hour: "0"
-    user: root
-    job: "/bin/bash {{ acas_install_directory }}/updatecerts.sh > /dev/null"
-  tags:
-    - update-certs
-- name: Execute the certs update script (adds postgres certs)
-  command: "/bin/bash {{ acas_install_directory }}/updatecerts.sh"
-  become: yes
   tags:
     - update-certs
 - name: Configure postgres ssl users
