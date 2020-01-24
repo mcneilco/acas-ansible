@@ -1,7 +1,7 @@
 #!/bin/bash
 cd {{ acas_install_directory }}/acas_custom 
 old=$(docker images --format {% raw %}'{{.ID}}' {% endraw %} mcneilco/onacaslims-certs:latest)
-runuser -l  acas -c 'cd {{ acas_install_directory }}/acas_custom ; /usr/local/bin/docker-compose pull certs'
+/sbin/runuser -l  acas -c 'cd {{ acas_install_directory }}/acas_custom ; /usr/local/bin/docker-compose pull certs'
 new=$(docker images --format {% raw %}'{{.ID}}' {% endraw %} mcneilco/onacaslims-certs:latest)
 if [ "$old" == "$new" ]; then
     echo "Certs already up to date"
