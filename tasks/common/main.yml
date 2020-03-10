@@ -6,13 +6,29 @@
   selinux:
     state: disabled
   notify: reboot
+  when: ansible_os_family == 'RedHat' and local|default(false)|bool == false
+  # failed_when ignores errors if selinux is not installed (added when running centos7 locally)
+  failed_when: result.msg | default('ok', True) is not search('(^ok$|libselinux-python|(SELinux state changed))')
 - name: Set hostname to {{ acas_fqdn }}
   hostname:
     name: "{{ acas_fqdn }}"
   notify: reboot
+  when: local|default(false)|bool == false
 - name: Reboot now
   meta: flush_handlers
+- name: Install epel
+  package:
+    name: "epel-release"
+    state: "present"
+  tags:
+    - "install-epel"
 - name: Install pip
-  easy_install:
-    name: pip
-    state: latest
+  package:
+    name: "python-pip"
+    state: "present"
+  tags:
+    - "install-python-pip"
+- name: Install pip dependencies for other packages
+  pip:
+    name: [wheel]
+    state: present

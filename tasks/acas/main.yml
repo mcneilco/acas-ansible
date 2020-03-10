@@ -4,27 +4,39 @@
     state: "present"
   tags:
     - "install git"
+- name: Install gcc
+  package:
+    name: "gcc"
+    state: "present"
+  tags:
+    - "install gcc"
+- name: Install python-devel
+  package:
+    name: "python-devel"
+    state: "present"
+  tags:
+    - "install-python-devel"
 - name: Ensure .ssh directory exists
   file:
     path: /home/acas/.ssh
     state: directory
     mode: 0700
-    owner: acas
-    group: docker
+    owner: "{{ run_user }}"
+    group: "{{ run_group }}"
 - name: Ensure GitHub deploy key is present on the server
   copy:
     content: "{{ acas_custom_deploykey }}"
     dest: /home/acas/.ssh/acas_custom_deploykey
     mode: 0600
-    owner: acas
-    group: docker
+    owner: "{{ run_user }}"
+    group: "{{ run_group }}"
   tags:
     - deploykey
 - name: Set permissions on {{ acas_install_directory }}
   file:
     path: "{{ acas_install_directory }}/{{ item }}"
-    group: docker
-    owner: acas
+    group: "{{ run_group }}"
+    owner: "{{ run_user }}"
     recurse: yes
   with_items:
     - acas_custom
@@ -49,55 +61,76 @@
   file:
     path: "{{ acas_install_directory }}/filestore"
     state: directory
-    group: centos
-    owner: centos
+    group: acas
+    owner: "{{ run_user }}"
     recurse: yes
 - name: Clone {{ acas_custom_gitrepo }} to {{ acas_install_directory }}/acas_custom
   git:
     repo: "{{ acas_custom_gitrepo }}"
     dest: "{{ acas_install_directory }}/acas_custom"
+    version: "{{ acas_custom_gitrevision }}"
     accept_hostkey: yes
     key_file: /home/acas/.ssh/acas_custom_deploykey
     force: yes
     update: yes
   become_user: acas
+- name: Check which template files exist
+  stat:
+    path: "{{ acas_install_directory }}/acas_custom/{{item}}"
+  with_items:
+    - conf/zzz-config.properties
+    - conf/applicationContext-security.xml
+    - docker-compose.yml
+    - modules/CmpdReg/src/client/custom/configuration.json
+  register: template_assets
+  tags: 
+    - template
+- debug:
+    msg: 'file name {{item.item}} exists'
+  with_items: "{{ template_assets.results }}"
+  when: item.stat.exists
+  tags: 
+    - template
 - name: Run template on acas_custom files
   run_once: true
   fetch:
-    src: "{{ acas_install_directory }}/acas_custom/{{item}}"
-    dest: /tmp/{{item}}
+    src: "{{ acas_install_directory }}/acas_custom/{{ item.item }}"
+    dest: /tmp/{{item.item}}
     flat: yes
     fail_on_missing: yes
-  with_items:
-    - conf/zzz-config.properties
-    - conf/applicationContext-security.xml
-    - docker-compose.yml
-    - modules/CmpdReg/src/client/custom/configuration.json
+  with_items: "{{ template_assets.results }}"
+  when: item.stat.exists
+  tags: 
+    - template
+- name: Set variables in templates
+  template :
+    src   : /tmp/{{item.item}}
+    dest  : "{{ acas_install_directory }}/acas_custom/{{item.item}}"
+    owner: "{{ run_user }}"
+    group: "{{ run_group }}"
+  with_items: "{{ template_assets.results }}"
+  when: item.stat.exists
+  tags: 
+    - template
 - name: Set variables in templates
   template :
     src   : /tmp/{{item}}
     dest  : "{{ acas_install_directory }}/acas_custom/{{item}}"
-    owner : acas
-    group : docker
-  with_items:
-    - conf/zzz-config.properties
-    - docker-compose.yml
-    - modules/CmpdReg/src/client/custom/configuration.json
-- name: Set variables in templates
-  template :
-    src   : /tmp/{{item}}
-    dest  : "{{ acas_install_directory }}/acas_custom/{{item}}"
-    owner : acas
-    group : docker
+    owner: "{{ run_user }}"
+    group: "{{ run_group }}"
   with_items:
     - conf/applicationContext-security.xml
   when: acas_authstrategy == "ldap"
+  tags: 
+    - template
 - name: Remove application context if acas auth
   lineinfile:
     path: "{{ acas_install_directory }}/acas_custom/docker-compose.yml"
     state: absent
     regexp: 'applicationContext-security.xml'
   when: acas_authstrategy != "ldap"
+  tags: 
+    - template
 - name: Get ACAS dot files git repo
   git:
     repo: 'https://github.com/mcneilco/acas-dotfiles.git'
@@ -118,11 +151,12 @@
   pip:
     name: [docker, docker-compose]
     extra_args: --user
-    state: latest
+    state: present
   become: yes
   become_user: acas
   tags: 
     - start-acas
+    - docker-python
 - name: Get docker-compose project name
   shell: |
      if [ -f .env ]; then 
@@ -168,24 +202,69 @@
   become_user: acas
   tags: 
     - start-acas
+- name: Get docker-compose config output
+  command: "{{ vars.docker_compose_path}} config"
+  args:
+    chdir: "{{ acas_install_directory }}/acas_custom"
+  register: docker_compose_config
+- name: Parse docker compose config output into variable
+  set_fact:
+    docker_compose_info: "{{ docker_compose_config.stdout | from_yaml }}"
+# - name: Print some debug information 
+#   vars: 
+#     msg: |
+#         Module Variables ("vars"):
+#         --------------------------------
+#         {{ vars | to_nice_json }} 
+
+#         Environment Variables ("environment"):
+#         --------------------------------
+#         {{ environment | to_nice_json }} 
+
+#         GROUP NAMES Variables ("group_names"):
+#         --------------------------------
+#         {{ group_names | to_nice_json }}
+
+#         GROUPS Variables ("groups"):
+#         --------------------------------
+#         {{ groups | to_nice_json }}
+
+#         HOST Variables ("hostvars"):
+#         --------------------------------
+#         {{ hostvars | to_nice_json }} 
+
+#   debug: 
+#     msg: "{{ msg.split('\n') }}"       
+#   tags: debug_info
+- name: Docker info
+  debug:
+    var: docker_compose_info
 - name: Add update certs script
   template:
     src: templates/updatecerts.sh
     dest: "{{ acas_install_directory }}/updatecerts.sh"
+  when: docker_compose_info.services.certs is defined
   tags:
     - update-certs
-- name: Check for updated certs nightly cron using certs update script
+- name : Remove - Check for updated certs nightly cron using certs update script 
+  cron :
+    name  : "check and update certs"
+    user: root
+    state : absent
+- name: Add - Check for updated certs nightly cron using certs update script 
   cron:
     name: "check and update certs"
     minute: "0"
     hour: "0"
     user: root
     job: "/bin/bash {{ acas_install_directory }}/updatecerts.sh > /dev/null 2>&1 || true"
+  when: docker_compose_info.services.certs is defined
   tags:
     - update-certs
 - name: Execute the certs update script (adds postgres certs)
   command: "/bin/bash {{ acas_install_directory }}/updatecerts.sh"
   become: yes
+  when: docker_compose_info.services.certs is defined
   tags:
     - update-certs
 - name: Run docker compose up
@@ -319,8 +398,8 @@
   template:
     src: templates/copy_api_views_to_db_container.sh
     dest: "{{ acas_install_directory }}/acas_custom/copy_api_views_to_db_container.sh"
-    owner : acas
-    group : docker
+    owner: "{{ run_user }}"
+    group: "{{ run_group }}"
     mode: 0777
   when: install_api_views
   tags:
@@ -329,8 +408,8 @@
   template:
     src: templates/api_views.sql
     dest: "{{ acas_install_directory }}/acas_custom/api_views.sql"
-    owner : acas
-    group : docker
+    owner: "{{ run_user }}"
+    group: "{{ run_group }}"
   when: install_api_views
   tags:
     - api-views

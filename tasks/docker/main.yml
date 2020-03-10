@@ -45,19 +45,24 @@
     name: docker
     state: "{{ docker_service_state }}"
     enabled: "{{ docker_service_enabled }}"
+  when: local|default(false)|bool == false
 
 - name: Set Docker Daemon options
   template:
     src: templates/daemon.json
     dest: /etc/docker/daemon.json
   notify: restart docker
+  when: local|default(false)|bool == false
 
 - include_tasks: local-persist.yml
-  when: docker_install_local_persist
+  when: local|default(false)|bool == false and docker_install_local_persist
+
+- name: Populate service facts (gets info about services already on the machine)
+  service_facts:
 
 - name: Ensure handlers are notified
   meta: flush_handlers
-
+  
 - include_tasks: install-docker-compose.yml
   when: docker_install_compose
 

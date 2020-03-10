@@ -54,6 +54,10 @@ docker_yum_repo_url: https://download.docker.com/linux/{{ (ansible_distribution 
 docker_yum_repo_enable_edge: 0
 docker_yum_repo_enable_test: 0
 
+# Run user
+run_user: acas
+run_group: docker
+
 # A list of users who will be added to the docker group.
 docker_users: ['acas']
 
@@ -73,6 +77,7 @@ acas_install_directory: /vol/acas
 
 # ACAS Install directory
 acas_custom_gitrepo: git@bitbucket.org:{{ company }}/acas_custom.git
+acas_custom_gitrevision: HEAD
 
 # Key file for ansible operations
 ansible_ssh_private_key_file: ~/.ssh/acas-{{ company }}.pem
