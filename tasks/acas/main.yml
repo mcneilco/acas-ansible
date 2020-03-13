@@ -348,6 +348,7 @@
     users: "{{ postgres_ssl_remote_users|join(', ') }}"
     databases: all
     source: 0.0.0.0/0
+  when: docker_compose_info.services.certs is defined
   tags:
     - postgres-ssl-users
     - pg-hba-conf
