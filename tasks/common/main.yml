@@ -28,6 +28,10 @@
     state: "present"
   tags:
     - "install-python-pip"
+- name: Install pip dependencies for other packages
+  pip:
+    name: [wheel]
+    state: present
 - name: Ensure group "acasadmins" exists
   group:
     name: acasadmins
