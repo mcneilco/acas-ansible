@@ -91,3 +91,6 @@ db_command: ["postgres", "-c", "log_connections=on", "-c", "log_disconnections=o
 # Configure Postgres SSL remote users
 # Only users on this list will be able to connect to the database remotely
 postgres_ssl_remote_users: ["readonly", "acas"]
+
+# ACAS Server admins which will get sudo access via the acasadmins servergroup
+acas_server_admins: []

@@ -28,7 +28,42 @@
     state: "present"
   tags:
     - "install-python-pip"
-- name: Install pip dependencies for other packages
-  pip:
-    name: [wheel]
+- name: Ensure group "acasadmins" exists
+  group:
+    name: acasadmins
     state: present
+  tags: sync-users
+- name: "Allow acasadmins to sudo without a password"
+  lineinfile:
+    dest: "/etc/sudoers" # path: in version 2.3
+    state: "present"
+    regexp: "^%acasadmins"
+    line: "%acasadmins ALL=(ALL) NOPASSWD: ALL"
+  tags: sync-users
+- name: "Create user accounts and add users to groups"
+  user:
+    name: "{{ item }}"
+    groups: "acasadmins"
+  with_items: "{{ acas_server_admins }}"
+  tags: sync-users
+- name: Determine existing users
+  shell: 'grep acasadmins /etc/group | cut -d: -f4 | tr "," "\n"'
+  changed_when: false 
+  register: existing_users
+  tags: sync-users
+- name: Determine removed users
+  set_fact:
+    removed_users: "{{ existing_users.stdout_lines | difference(acas_server_admins) }}"
+  tags: sync-users
+- name: Delete removed user accounts
+  user:
+    name: "{{ item }}"
+    state: absent
+  with_items: "{{ removed_users }}"
+  tags: sync-users
+- name: "Add authorized keys"
+  authorized_key:
+    user: "{{ item }}"
+    key: "{{ lookup('file', lookup('env','HOME') + '/.acasadminkeys/' + item + '.pub') }}"
+  with_items: "{{ acas_server_admins }}"
+  tags: sync-users
