@@ -64,6 +64,13 @@
     group: centos
     owner: centos
     recurse: yes
+- name: Set permissions on {{ acas_install_directory }}/cache
+  file:
+    path: "{{ acas_install_directory }}/cache"
+    state: directory
+    group: centos
+    owner: centos
+    recurse: yes
 - name: Clone {{ acas_custom_gitrepo }} to {{ acas_install_directory }}/acas_custom
   git:
     repo: "{{ acas_custom_gitrepo }}"
