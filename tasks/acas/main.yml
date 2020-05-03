@@ -70,6 +70,7 @@
     state: directory
     group: centos
     owner: centos
+    mode: 0777
     recurse: yes
 - name: Clone {{ acas_custom_gitrepo }} to {{ acas_install_directory }}/acas_custom
   git:
@@ -278,6 +279,7 @@
   docker_compose:
     project_src: "{{ acas_install_directory }}/acas_custom"
     state: present
+    pull: yes
     # pull: yes #ansible bug currently breaking pull
   become: yes
   become_user: acas
