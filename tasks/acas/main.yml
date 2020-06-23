@@ -438,7 +438,7 @@
     minute: "*/1"
     hour: "*"
     user: acas
-    job: "cd /vol/acas/acas_custom && /usr/local/bin/docker-compose exec db psql -U readonly acas -c \"REFRESH MATERIALIZED VIEW CONCURRENTLY api_analysis_group_results_mv; REFRESH MATERIALIZED VIEW CONCURRENTLY api_dose_response_mv;\"  > /dev/null 2>&1 || true"
+    job: "cd /vol/acas/acas_custom && /usr/local/bin/docker-compose exec -T db psql -U readonly acas -c \"REFRESH MATERIALIZED VIEW CONCURRENTLY api_analysis_group_results_mv; REFRESH MATERIALIZED VIEW CONCURRENTLY api_dose_response_mv;\"  > /dev/null 2>&1 || true"
   when: install_api_views
   tags:
     - api-views
@@ -449,7 +449,7 @@
     minute: "*/5"
     hour: "*"
     user: acas
-    job: "cd /vol/acas/acas_custom && /usr/local/bin/docker-compose exec db psql -U readonly acas -c \"REFRESH MATERIALIZED VIEW CONCURRENTLY api_salt_form_corp_name; REFRESH MATERIALIZED VIEW CONCURRENTLY api_salt_form_mv;REFRESH MATERIALIZED VIEW CONCURRENTLY api_salt_form_assoc_mv;\"   > /dev/null 2>&1 || true"
+    job: "cd /vol/acas/acas_custom && /usr/local/bin/docker-compose exec -T db psql -U readonly acas -c \"REFRESH MATERIALIZED VIEW CONCURRENTLY api_salt_form_corp_name; REFRESH MATERIALIZED VIEW CONCURRENTLY api_salt_form_mv;REFRESH MATERIALIZED VIEW CONCURRENTLY api_salt_form_assoc_mv;\"   > /dev/null 2>&1 || true"
   when: install_api_views
   tags:
     - api-views
@@ -460,7 +460,7 @@
     minute: "*/5"
     hour: "*"
     user: acas
-    job: "cd /vol/acas/acas_custom && /usr/local/bin/docker-compose exec db psql -U readonly acas -c psql -c \"REFRESH MATERIALIZED VIEW CONCURRENTLY api_aliquot_inventory_mv;\"   > /dev/null 2>&1 || true"
+    job: "cd /vol/acas/acas_custom && /usr/local/bin/docker-compose exec -T db psql -U readonly acas -c psql -c \"REFRESH MATERIALIZED VIEW CONCURRENTLY api_aliquot_inventory_mv;\"   > /dev/null 2>&1 || true"
   when: install_api_views
   tags:
     - api-views
