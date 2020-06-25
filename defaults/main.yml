@@ -10,13 +10,14 @@ livedesign_private_ip: 10.100.54.11
 acas_authstrategy: database
 
 # email for password resets coming from acas when auth strategy is set to acas
-email_host: smtp.gmail.com
+email_host: email-smtp.{{ aws_region }}.amazonaws.com
 email_port: 587
 email_auth: true
 email_ssl: true
 email_tls: true
-email_user:
+email_user: 
 email_password:
+email_from: {{ company }} ACAS {{ env }} <{{ stack_name }}@{{ acas_fqdn }}>
 
 run_backups: false
 # Uncomment the next line and run ansible when you want to start test from a backup of prod
