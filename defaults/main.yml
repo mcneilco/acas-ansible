@@ -17,7 +17,7 @@ email_ssl: true
 email_tls: true
 email_user: 
 email_password:
-email_from: {{ company }} ACAS {{ env }} <{{ stack_name }}@{{ acas_fqdn }}>
+email_from: "{{ company }} ACAS {{ env }} <{{ stack_name }}@{{ acas_fqdn }}>"
 
 run_backups: false
 # Uncomment the next line and run ansible when you want to start test from a backup of prod
