@@ -262,32 +262,29 @@ CREATE OR REPLACE VIEW p_api_analysis_group_results AS
     agv2.code_value AS tested_lot,
     agv2.concentration AS tested_conc,
         CASE
-            WHEN agv4.numeric_value IS NOT NULL AND agv2.concentration IS NOT NULL THEN ((((agv2.conc_unit::text || ' and '::text) || agv4.numeric_value) || ' '::text) || agv4.unit_kind::text)::character varying
-            WHEN agv4.numeric_value IS NOT NULL THEN ((agv4.numeric_value || ' '::text) || agv4.unit_kind::text)::character varying
+            WHEN agv4.numeric_value IS NOT NULL AND agv2.concentration IS NOT NULL THEN ((((agv2.conc_unit || ' and ') || agv4.numeric_value) || ' ') || agv4.unit_kind)
+            WHEN agv4.numeric_value IS NOT NULL THEN ((agv4.numeric_value || ' ') || agv4.unit_kind)
             ELSE agv2.conc_unit
         END AS tested_conc_unit,
     agv.id AS agv_id,
     agv.ls_type,
         CASE
-            WHEN agv.ls_type::text = 'inlineFileValue'::text THEN agv.ls_type_and_kind
+            WHEN agv.ls_type::text = 'inlineFileValue' THEN agv.ls_type_and_kind
             ELSE agv.ls_kind
         END AS ls_kind,
     agv.operator_kind,
         CASE
-            WHEN agv.ls_kind::text ~~ '%curve id'::text THEN NULL::double precision
+            WHEN agv.ls_kind ~~ '%curve id' THEN NULL
             ELSE agv.numeric_value
         END AS numeric_value,
     agv.uncertainty,
     agv.unit_kind,
         CASE
-            WHEN agv.ls_type::text = 'fileValue'::text THEN (((((((('<A HREF="'::text || ((( SELECT application_setting.prop_value
-               FROM application_setting
-              WHERE application_setting.prop_name::text = 'BatchDocumentsURL'::text))::text)) || replace(agv.file_value::text, ' '::text, '%20'::text)) || '">'::text) || agv.comments::text) || ' ('::text) || agv.file_value::text) || ')'::text) || '</A>'::text)::character varying
-            WHEN agv.ls_type::text = 'inlineFileValue'::text THEN agv.file_value
-            WHEN agv.ls_type::text = 'urlValue'::text THEN ((((((('<A HREF="'::text || replace(agv.url_value::text, ' '::text, '%20'::text)) || '">'::text) || agv.comments::text) || ' ('::text) || agv.url_value::text) || ')'::text) || '</A>'::text)::character varying
-            WHEN agv.ls_type::text = 'dateValue'::text THEN to_char(agv.date_value, 'yyyy-mm-dd'::text)::character varying
-            WHEN agv.ls_type::text = 'codeValue'::text THEN agv.code_value
-            ELSE COALESCE(agv.string_value, agv.clob_value::character varying, agv.comments)
+            WHEN agv.ls_type in ('fileValue', 'inlineFileValue') THEN replace(agv.file_value, ' ', '%20')
+            WHEN agv.ls_type = 'urlValue' THEN ((((((('<A HREF="' || replace(agv.url_value, ' ', '%20')) || '">') || agv.comments) || ' (') || agv.url_value) || ')') || '</A>')
+            WHEN agv.ls_type = 'dateValue' THEN to_char(agv.date_value, 'yyyy-mm-dd')
+            WHEN agv.ls_type = 'codeValue' THEN agv.code_value
+            ELSE COALESCE(agv.string_value, agv.clob_value, agv.comments)
         END AS string_value,
     agv.comments,
     agv.recorded_date::date AS recorded_date,
