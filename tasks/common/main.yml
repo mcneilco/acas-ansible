@@ -22,12 +22,6 @@
     state: "present"
   tags:
     - "install-epel"
-- name: Install pip
-  package:
-    name: "python-pip"
-    state: "present"
-  tags:
-    - "install-python-pip"
 - name: Install pip dependencies for other packages
   pip:
     name: [wheel]

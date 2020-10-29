@@ -7,6 +7,11 @@
       - docker-engine
     state: absent
 
+- name: Install iptables
+  package:
+    name: "iptables"
+    state: "latest"
+
 - name: Add Docker GPG key
   rpm_key:
     key: https://download.docker.com/linux/centos/gpg
@@ -37,6 +42,12 @@
 - name: Install Docker
   package:
     name: "{{ docker_package }}"
+    state: "{{ docker_package_state }}"
+  notify: restart docker
+
+- name: Install Docker CLI
+  package:
+    name: "{{ docker_package }}-cli"
     state: "{{ docker_package_state }}"
   notify: restart docker
 

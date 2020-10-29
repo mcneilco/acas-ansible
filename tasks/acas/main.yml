@@ -4,18 +4,6 @@
     state: "present"
   tags:
     - "install git"
-- name: Install gcc
-  package:
-    name: "gcc"
-    state: "present"
-  tags:
-    - "install gcc"
-- name: Install python-devel
-  package:
-    name: "python-devel"
-    state: "present"
-  tags:
-    - "install-python-devel"
 - name: Ensure .ssh directory exists
   file:
     path: /home/acas/.ssh
@@ -139,6 +127,14 @@
   when: acas_authstrategy != "ldap"
   tags: 
     - template
+- name: Remove customer specific server functions if acas auth
+  lineinfile:
+    path: "{{ acas_install_directory }}/acas_custom/docker-compose.yml"
+    state: absent
+    regexp: 'CustomerSpecificServerFunctions'
+  when: acas_authstrategy != "ldap"
+  tags: 
+    - template
 - name: Get ACAS dot files git repo
   git:
     repo: 'https://github.com/mcneilco/acas-dotfiles.git'
@@ -158,7 +154,7 @@
 - name: Install docker python package
   pip:
     name: [docker, docker-compose]
-    extra_args: --user
+    extra_args: --user --force
     state: present
   become: yes
   become_user: acas
@@ -279,7 +275,6 @@
   docker_compose:
     project_src: "{{ acas_install_directory }}/acas_custom"
     state: present
-    pull: yes
     # pull: yes #ansible bug currently breaking pull
   become: yes
   become_user: acas
