@@ -294,10 +294,12 @@ CREATE OR REPLACE VIEW p_api_analysis_group_results AS
      JOIN experiment_analysisgroup eag ON e.id = eag.experiment_id
      JOIN analysis_group ag ON eag.analysis_group_id = ag.id
      JOIN analysis_group_state ags ON ags.analysis_group_id = ag.id
-     JOIN analysis_group_value agv ON agv.analysis_state_id = ags.id AND agv.ls_kind::text <> 'batch code'::text AND agv.ls_kind::text <> 'time'::text
-     JOIN analysis_group_value agv2 ON agv2.analysis_state_id = ags.id AND agv2.ls_kind::text = 'batch code'::text
-     LEFT JOIN analysis_group_value agv4 ON agv4.analysis_state_id = ags.id AND agv4.ls_kind::text = 'time'::text
+     JOIN analysis_group_value agv ON agv.analysis_state_id = ags.id AND agv.ls_kind <> 'batch code' AND agv.ls_kind <> 'time'
+     JOIN analysis_group_value agv2 ON agv2.analysis_state_id = ags.id AND agv2.ls_kind = 'batch code'
+     LEFT JOIN analysis_group_value agv4 ON agv4.analysis_state_id = ags.id AND agv4.ls_kind = 'time'
   WHERE ag.ignored = false AND ags.ignored = false AND agv.ignored = false AND e.ignored = false;
+
+
 
 
 CREATE OR REPLACE VIEW api_analysis_group_results_view AS 
