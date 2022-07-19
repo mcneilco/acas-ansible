@@ -49,15 +49,15 @@
   file:
     path: "{{ acas_install_directory }}/filestore"
     state: directory
-    group: centos
-    owner: centos
+    group: "{{remote_user}}"
+    owner: "{{remote_user}}"
     recurse: yes
 - name: Set permissions on {{ acas_install_directory }}/cache
   file:
     path: "{{ acas_install_directory }}/cache"
     state: directory
-    group: centos
-    owner: centos
+    group: "{{remote_user}}"
+    owner: "{{remote_user}}"
     mode: 0777
     recurse: yes
 - name: Clone {{ acas_custom_gitrepo }} to {{ acas_install_directory }}/acas_custom

@@ -24,7 +24,7 @@ run_backups: false
 # restore: "latest hourly s3://{{ company }}.onacaslims.com/{{ company }}-prod"
 
 # User account used to ssh the hosts
-remote_user: centos
+remote_user: ubuntu
 
 # non-sudo user to be created for running process
 action_user: docker
