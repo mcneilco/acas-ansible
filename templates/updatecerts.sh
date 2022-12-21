@@ -19,8 +19,8 @@ if [ -f .env ]; then
     . .env;
 fi;
 container=$(docker create mcneilco/onacaslims-certs:latest)
-docker cp $container:/etc/letsencrypt/live/onacaslims.com/fullchain.pem {{ acas_install_directory }}/dbstore/server.crt
-docker cp $container:/etc/letsencrypt/live/onacaslims.com/privkey.pem {{ acas_install_directory }}/dbstore/server.key
+docker cp $container:/etc/letsencrypt/live/onacaslims.com/fullchain.pem {{ acas_install_directory }}/certs/server.crt
+docker cp $container:/etc/letsencrypt/live/onacaslims.com/privkey.pem {{ acas_install_directory }}/certs/server.key
 docker rm -v $container
-chown postgres:postgres {{ acas_install_directory }}/dbstore/server.key {{ acas_install_directory }}/dbstore/server.crt
-chmod 600 {{ acas_install_directory }}/dbstore/server.key {{ acas_install_directory }}/dbstore/server.crt
+chown postgres:postgres {{ acas_install_directory }}/certs/server.key {{ acas_install_directory }}/certs/server.crt
+chmod 600 {{ acas_install_directory }}/certs/server.key {{ acas_install_directory }}/certs/server.crt

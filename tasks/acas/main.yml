@@ -32,13 +32,13 @@
   group:
     name: postgres
     state: present
-    gid: 499
+    gid: 2005
 - name: Add a postgres user with same uid/gid as docker postgres
   user:
     name: postgres
     group: postgres
     comment: postgres
-    uid: 499
+    uid: 2005
 - name: Set permissions on {{ acas_install_directory }}/dbstore
   file:
     path: "{{ acas_install_directory }}/dbstore"
@@ -49,15 +49,15 @@
   file:
     path: "{{ acas_install_directory }}/filestore"
     state: directory
-    group: centos
-    owner: centos
+    group: "{{remote_user}}"
+    owner: "{{remote_user}}"
     recurse: yes
 - name: Set permissions on {{ acas_install_directory }}/cache
   file:
     path: "{{ acas_install_directory }}/cache"
     state: directory
-    group: centos
-    owner: centos
+    group: "{{remote_user}}"
+    owner: "{{remote_user}}"
     mode: 0777
     recurse: yes
 - name: Clone {{ acas_custom_gitrepo }} to {{ acas_install_directory }}/acas_custom
@@ -148,6 +148,12 @@
 - name: Make dbstore folder
   file:
     path: "{{ acas_install_directory }}/dbstore"
+    state: directory
+    group: postgres
+    owner: postgres
+- name: Make certs folder
+  file:
+    path: "{{ acas_install_directory }}/certs"
     state: directory
     group: postgres
     owner: postgres
@@ -335,7 +341,7 @@
     services:
       - acas
       - rservices
-      - tomcat
+      - roo
       - nginx
     restarted: yes  
   become: yes

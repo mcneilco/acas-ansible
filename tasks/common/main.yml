@@ -16,12 +16,6 @@
   when: local|default(false)|bool == false
 - name: Reboot now
   meta: flush_handlers
-- name: Install epel
-  package:
-    name: "epel-release"
-    state: "present"
-  tags:
-    - "install-epel"
 - name: Install pip dependencies for other packages
   pip:
     name: [wheel]

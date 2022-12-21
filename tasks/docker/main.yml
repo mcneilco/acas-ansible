@@ -12,38 +12,25 @@
     name: "iptables"
     state: "latest"
 
-- name: Add Docker GPG key
-  rpm_key:
-    key: https://download.docker.com/linux/centos/gpg
+- name: Add Docker GPG apt Key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
     state: present
 
-- name: Add Docker repository
-  get_url:
-    url: "{{ docker_yum_repo_url }}"
-    dest: '/etc/yum.repos.d/docker-{{ docker_edition }}.repo'
-    owner: root
-    group: root
-    mode: 0644
+- name: Add Docker Repository
+  apt_repository:
+    repo: deb https://download.docker.com/linux/ubuntu focal stable
+    state: present
 
-- name: Configure Docker Edge repo
-  ini_file:
-    dest: '/etc/yum.repos.d/docker-{{ docker_edition }}.repo'
-    section: 'docker-{{ docker_edition }}-edge'
-    option: enabled
-    value: '{{ docker_yum_repo_enable_edge }}'
-
-- name: Configure Docker Test repo
-  ini_file:
-    dest: '/etc/yum.repos.d/docker-{{ docker_edition }}.repo'
-    section: 'docker-{{ docker_edition }}-test'
-    option: enabled
-    value: '{{ docker_yum_repo_enable_test }}'
-
-- name: Install Docker
-  package:
+- name: Update apt and install docker-ce
+  apt:
     name: "{{ docker_package }}"
-    state: "{{ docker_package_state }}"
-  notify: restart docker
+    state: latest
+    update_cache: true
+
+- name: Install Docker Module for Python
+  pip:
+    name: docker
 
 - name: Install Docker CLI
   package:

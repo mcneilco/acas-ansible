@@ -24,7 +24,7 @@ run_backups: false
 # restore: "latest hourly s3://{{ company }}.onacaslims.com/{{ company }}-prod"
 
 # User account used to ssh the hosts
-remote_user: centos
+remote_user: ubuntu
 
 # non-sudo user to be created for running process
 action_user: docker
@@ -84,10 +84,12 @@ acas_custom_gitrevision: HEAD
 ansible_ssh_private_key_file: ~/.ssh/acas-{{ company }}.pem
 
 # Install api views and api views cron
-install_api_views: true
+install_api_views: false
 
 # Postgres command
-db_command: ["postgres", "-c", "log_connections=on", "-c", "log_disconnections=on", "-c", "ssl=on", "-c", "ssl_cert_file=server.crt", "-c", "ssl_key_file=server.key"]
+db_command: ["postgres", "-c", "log_connections=on", "-c", "log_disconnections=on", "-c", "ssl=on", "-c", "ssl_cert_file=/certs/server.crt", "-c", "ssl_key_file=/certs/server.key"]
+#use to bottstrap then redeploye with above
+#db_command: ["postgres", "-c", "log_connections=on", "-c", "log_disconnections=on"]
 
 # Configure Postgres SSL remote users
 # Only users on this list will be able to connect to the database remotely
