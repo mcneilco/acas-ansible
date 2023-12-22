@@ -28,9 +28,9 @@
     state: latest
     update_cache: true
 
-- name: Install Docker Module for Python
-  pip:
-    name: docker
+# - name: Install Docker Module for Python
+#   pip:
+#     name: docker
 
 - name: Install Docker CLI
   package:

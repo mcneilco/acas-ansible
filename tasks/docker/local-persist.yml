@@ -4,13 +4,13 @@
     msg: docker volume local persist already installed
   when: "'docker-volume-local-persist.service' in services"
 - name: Install Local Persist (if configured). Download install script
-  get_url:
-    url: https://raw.githubusercontent.com/CWSpear/local-persist/master/scripts/install.sh
-    dest: /tmp/install.sh
+  template: #TODO go back to orginal git repo and clone instead of using my local copy
+    src: templates/install_local_persist.sh
+    dest: "/tmp/install_local_persist.sh"
     mode: 0755
   when: "'docker-volume-local-persist.service' not in services"
 - name: Install Local persist
-  shell: /tmp/install.sh
+  shell: /tmp/install_local_persist.sh
   when: "'docker-volume-local-persist.service' not in services"
 - name: Remove local persist install script
   file: path=/tmp/install.sh state=absent

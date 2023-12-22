@@ -1,4 +1,6 @@
 # Disable SELinux
+# - name: lookup acas password from AWS secrets manager secret in the current region
+#   debug: msg="{{ (lookup('amazon.aws.aws_secret', 'acas_user_acas_database_password', region='us-east-1', profile='nimbus')| from_json).acas_database_password  }}"
 - name: List of all hosts
   debug:
     msg: "{{ play_hosts }}"
