@@ -157,16 +157,22 @@
     state: directory
     group: postgres
     owner: postgres
-- name: Install docker python package
-  pip:
-    name: [docker, docker-compose]
-    extra_args: --user --force
-    state: present
-  become: yes
-  become_user: acas
-  tags: 
-    - start-acas
-    - docker-python
+# - name: Install docker-compose-plugin
+  # package:
+  #   name: "docker-compose-plugin"
+  #   state: "present"
+  # tags:
+  #   - start-acas
+# - name: Install docker python package
+#   pip:
+#     name: [docker, docker-compose]
+#     extra_args: --user --force
+#     state: present
+#   become: yes
+#   become_user: acas
+#   tags: 
+#     - start-acas
+#     - docker-python
 - name: Get docker-compose project name
   shell: |
      if [ -f .env ]; then 
@@ -204,10 +210,9 @@
   tags:
     - pg-hba-conf
 - name: Run docker compose down (remove volumes yes, this won't remove the database or filestore)
-  docker_compose:
-    project_src: "{{ acas_install_directory }}/acas_custom"
-    state: absent
-    remove_volumes: yes
+  ansible.builtin.shell:
+    cmd: docker-compose down -v
+    chdir: "{{ acas_install_directory }}/acas_custom"
   become: yes
   become_user: acas
   tags: 
@@ -278,10 +283,9 @@
   tags:
     - update-certs
 - name: Run docker compose up
-  docker_compose:
-    project_src: "{{ acas_install_directory }}/acas_custom"
-    state: present
-    # pull: yes #ansible bug currently breaking pull
+  ansible.builtin.shell:
+    cmd: docker-compose up -d
+    chdir: "{{ acas_install_directory }}/acas_custom"
   become: yes
   become_user: acas
   tags: 
@@ -303,13 +307,9 @@
     - restore-acas
   when: restore is defined
 - name: Restart services
-  docker_compose:
-    project_src: "{{ acas_install_directory }}/acas_custom"
-    state: present
-    services:
-      - acas
-      - rservices
-    restarted: yes  
+  ansible.builtin.shell:
+    cmd: docker-compose restart acas rservices
+    chdir: "{{ acas_install_directory }}/acas_custom"
   become: yes
   become_user: acas
   tags:
@@ -335,15 +335,9 @@
     minutes: 2
   when: restore is not defined
 - name: Restart services
-  docker_compose:
-    project_src: "{{ acas_install_directory }}/acas_custom"
-    state: present
-    services:
-      - acas
-      - rservices
-      - roo
-      - nginx
-    restarted: yes  
+  ansible.builtin.shell:
+    cmd: docker-compose restart acas rservices roo nginx
+    chdir: "{{ acas_install_directory }}/acas_custom"
   become: yes
   become_user: acas
   tags:
@@ -397,10 +391,9 @@
   tags:
     - pg-hba-conf
 - name: Restart services
-  docker_compose:
-    project_src: "{{ acas_install_directory }}/acas_custom"
-    state: present
-    restarted: yes  
+  ansible.builtin.shell:
+    cmd: docker-compose restart
+    chdir: "{{ acas_install_directory }}/acas_custom"
   become: yes
   become_user: acas
   tags:
