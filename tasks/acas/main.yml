@@ -436,7 +436,7 @@
     minute: "*/1"
     hour: "*"
     user: acas
-    job: "cd /vol/acas/acas_custom && /usr/local/bin/docker-compose exec -T db psql -U readonly acas -c \"REFRESH MATERIALIZED VIEW CONCURRENTLY api_analysis_group_results_mv; REFRESH MATERIALIZED VIEW CONCURRENTLY api_dose_response_mv;\"  > /dev/null 2>&1 || true"
+    job: "cd /vol/acas/acas_custom && /usr/local/bin/docker-compose exec -T db psql -U readonly acas -c \"REFRESH MATERIALIZED VIEW CONCURRENTLY api_analysis_group_results_mv; REFRESH MATERIALIZED VIEW api_dose_response_mv;\"  > /dev/null 2>&1 || true"
   when: install_api_views
   tags:
     - api-views
