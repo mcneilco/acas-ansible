@@ -1,0 +1,2 @@
+{{ livedesign_svc_user }}
+{{ livedesign_svc_password }}

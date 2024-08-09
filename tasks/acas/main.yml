@@ -139,6 +139,50 @@
   when: acas_authstrategy != "ldap"
   tags: 
     - template
+- name: Clone {{ acas_client_gitrepo }} to {{ acas_install_directory }}/acas_client
+  git:
+    repo: "{{ acas_client_gitrepo }}"
+    dest: "{{ acas_install_directory }}/acas_client"
+    version: "{{ acas_client_gitrevision }}"
+    accept_hostkey: yes
+    key_file: /home/acas/.ssh/acas_custom_deploykey
+    force: yes
+    update: yes
+  become_user: acas
+  when: install_acas_client
+- name: Run template on acas_client credential file
+  run_once: true
+  fetch:
+    src: "{{ acas_install_directory }}/acas_client/credentials"
+    dest: /tmp/credentials
+    flat: yes
+    fail_on_missing: yes
+  when: install_acas_client
+  tags: 
+    - template
+- name: Set variables in acas_client credentials
+  template :
+    src   : /tmp/credentials
+    dest  : "{{ acas_install_directory }}/acas_client/credentials"
+    owner: "{{ run_user }}"
+    group: "{{ run_group }}"
+  when: install_acas_client
+  tags: 
+    - template
+
+- name: Upload env.j2 template as .env
+  template:
+    src: env.j2
+    dest: "/vol/acas/acas_client/.env"
+    owner: "{{ run_user }}"
+  when: install_acas_client
+- name: Upload LD credentials
+  template:
+    src: ld_creds.txt
+    dest: "/vol/acas/acas_client/conf/ld_creds.txt"
+    owner: "{{ run_user }}"
+  when: install_acas_client
+
 - name: Get ACAS dot files git repo
   git:
     repo: 'https://github.com/mcneilco/acas-dotfiles.git'
