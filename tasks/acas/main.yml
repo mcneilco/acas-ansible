@@ -176,12 +176,6 @@
     dest: "/vol/acas/acas_client/.env"
     owner: "{{ run_user }}"
   when: install_acas_client
-- name: Upload LD credentials
-  template:
-    src: ld_creds.txt
-    dest: "/vol/acas/acas_client/conf/ld_creds.txt"
-    owner: "{{ run_user }}"
-  when: install_acas_client
 
 - name: Get ACAS dot files git repo
   git:
