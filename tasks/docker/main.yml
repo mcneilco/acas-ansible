@@ -19,24 +19,24 @@
 
 - name: Add Docker Repository
   apt_repository:
-    repo: deb https://download.docker.com/linux/ubuntu focal stable
+    repo: deb [signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu focal stable
     state: present
 
-# - name: Update apt and install docker-ce
-#   apt:
-#     name: "{{ docker_package }}"
-#     state: latest
-#     update_cache: true
+- name: Update apt and install docker-ce
+  apt:
+    name: "{{ docker_package }}"
+    state: latest
+    update_cache: true
 
-# - name: Install Docker Module for Python
-#   pip:
-#     name: docker
+- name: Install Docker Module for Python
+  pip:
+    name: docker
 
-# - name: Install Docker CLI
-#   package:
-#     name: "{{ docker_package }}-cli"
-#     state: "{{ docker_package_state }}"
-#   notify: restart docker
+- name: Install Docker CLI
+  package:
+    name: "{{ docker_package }}-cli"
+    state: "{{ docker_package_state }}"
+  notify: restart docker
 
 - name: Ensure Docker is started and enabled at boot
   service:
