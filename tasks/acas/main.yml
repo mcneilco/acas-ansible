@@ -237,20 +237,20 @@
   tags:
     - compose-project
     - pg-hba-conf
-- name: Get info on old docker network
-  docker_network_info:
-    name: "{{ compose_project.stdout }}_default"
-  register: docker_old_network_info
-  become: yes
-  become_user: acas
-  tags:
-    - pg-hba-conf
-- name: Old docker network info
-  debug:
-    var: docker_old_network_info.network
-  when: docker_old_network_info.exists
-  tags:
-    - pg-hba-conf
+# - name: Get info on old docker network
+#   docker_network_info:
+#     name: "{{ compose_project.stdout }}_default"
+#   register: docker_old_network_info
+#   become: yes
+#   become_user: acas
+#   tags:
+#     - pg-hba-conf
+# - name: Old docker network info
+#   debug:
+#     var: docker_old_network_info.network
+#   when: docker_old_network_info.exists
+#   tags:
+#     - pg-hba-conf
 - name: Run docker compose down (remove volumes yes, this won't remove the database or filestore)
   ansible.builtin.shell:
     cmd: docker-compose down -v
@@ -332,14 +332,18 @@
   become_user: acas
   tags: 
     - start-acas
-- name: Docker prune everything (including non-dangling images)
-  docker_prune:
-    images: yes
-    images_filters:
-      dangling: false
-    networks: yes
-    volumes: yes
-    builder_cache: yes
+# remove below because we don;t know state of sdf-preprocessor or lr-export. These may not be running and could be affected/
+# - name: Docker prune everything (including non-dangling images)
+#   ansible.builtin.shell:
+#     cmd: docker prune --volumes --all
+#     chdir: "{{ acas_install_directory }}/acas_custom"
+#   docker_prune:
+#     images: yes
+#     images_filters:
+#       dangling: false
+#     networks: yes
+#     volumes: yes
+#     builder_cache: yes
   become: yes
   become_user: acas
 - name: Pause for 2 minutes
@@ -398,20 +402,20 @@
 #   tags:
 #     - postgres-ssl-users
 #     - pg-hba-conf
-- name: Get info on docker network
-  docker_network_info:
-    name: "{{ compose_project.stdout }}_default"
-  register: docker_network_info
-  become: yes
-  become_user: acas
-  tags:
-    - pg-hba-conf
-- name: Print information about docker network
-  debug:
-    var: docker_network_info.network
-  when: docker_network_info.exists
-  tags:
-    - pg-hba-conf
+# - name: Get info on docker network
+#   docker_network_info:
+#     name: "{{ compose_project.stdout }}_default"
+#   register: docker_network_info
+#   become: yes
+#   become_user: acas
+#   tags:
+#     - pg-hba-conf
+# - name: Print information about docker network
+#   debug:
+#     var: docker_network_info.network
+#   when: docker_network_info.exists
+#   tags:
+#     - pg-hba-conf
 # - name: Revoke old docker network from non ssl connections to postgres database
 #   postgresql_pg_hba:
 #     dest: "{{ acas_install_directory }}/dbstore/pg_hba.conf"
