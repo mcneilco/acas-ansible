@@ -27,6 +27,7 @@
     name: "{{ docker_package }}"
     state: latest
     update_cache: true
+  when: update_docker
 
 - name: Install Docker Module for Python
   pip:
