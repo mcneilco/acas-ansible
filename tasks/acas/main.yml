@@ -39,19 +39,19 @@
     group: postgres
     comment: postgres
     uid: 2005
-- name: Set permissions on {{ acas_install_directory }}/dbstore
-  file:
-    path: "{{ acas_install_directory }}/dbstore"
-    group: postgres
-    owner: postgres
-    recurse: yes
-- name: Set permissions on {{ acas_install_directory }}/filestore
-  file:
-    path: "{{ acas_install_directory }}/filestore"
-    state: directory
-    group: "{{remote_user}}"
-    owner: "{{remote_user}}"
-    recurse: yes
+# - name: Set permissions on {{ acas_install_directory }}/dbstore
+#   file:
+#     path: "{{ acas_install_directory }}/dbstore"
+#     group: postgres
+#     owner: postgres
+#     recurse: yes
+# - name: Set permissions on {{ acas_install_directory }}/filestore
+#   file:
+#     path: "{{ acas_install_directory }}/filestore"
+#     state: directory
+#     group: "{{remote_user}}"
+#     owner: "{{remote_user}}"
+#     recurse: yes
 - name: Set permissions on {{ acas_install_directory }}/cache
   file:
     path: "{{ acas_install_directory }}/cache"
@@ -176,6 +176,13 @@
     dest: "/vol/acas/acas_client/.env"
     owner: "{{ run_user }}"
   when: install_acas_client
+- name: Add acas_startup.sh script
+  template:
+    src: templates/acas_startup.sh
+    dest: "{{ acas_install_directory }}/acas_custom/acas_startup.sh"
+    owner: "{{ run_user }}"
+    group: "{{ run_group }}"
+    mode: 0755
 
 - name: Get ACAS dot files git repo
   git:
@@ -326,7 +333,7 @@
     - update-certs
 - name: Run docker compose up
   ansible.builtin.shell:
-    cmd: docker-compose up -d
+    cmd: ./acas_startup.sh &
     chdir: "{{ acas_install_directory }}/acas_custom"
   become: yes
   become_user: acas
@@ -344,23 +351,23 @@
 #     networks: yes
 #     volumes: yes
 #     builder_cache: yes
-  become: yes
-  become_user: acas
+  # become: yes
+  # become_user: acas
 - name: Pause for 2 minutes
   pause:
     minutes: 2
   tags:
     - restore-acas
   when: restore is defined
-- name: Restart services
-  ansible.builtin.shell:
-    cmd: docker-compose restart acas rservices
-    chdir: "{{ acas_install_directory }}/acas_custom"
-  become: yes
-  become_user: acas
-  tags:
-    - restore-acas
-  when: restore is defined
+# - name: Restart services
+#   ansible.builtin.shell:
+#     cmd: ./acas_startup.sh &
+#     chdir: "{{ acas_install_directory }}/acas_custom"
+#   become: yes
+#   become_user: acas
+#   tags:
+#     - restore-acas
+#   when: restore is defined
 - name: Run database restore with {{ restore }}
   shell: |
     /usr/local/bin/docker-compose exec backup ./backup.sh restore {{ restore }}
@@ -376,20 +383,19 @@
   when: restore is defined
   tags:
     - restore-acas
-- name: Pause for 2 minutes
-  pause:
-    minutes: 2
-  when: restore is not defined
+# - name: Pause for 2 minutes
+#   pause:
+#     minutes: 2
+#   when: restore is not defined
 - name: Restart services
   ansible.builtin.shell:
-    cmd: docker-compose restart acas rservices roo nginx
+    cmd: ./acas_startup.sh &
     chdir: "{{ acas_install_directory }}/acas_custom"
   become: yes
   become_user: acas
   tags:
-    - start-acas
+    # - start-acas
     - restore-acas
-  tags:
     - update-certs
 # - name: Configure postgres ssl users
 #   postgresql_pg_hba:
@@ -436,14 +442,14 @@
 #     source: "{{ docker_network_info.network.IPAM.Config[0].Subnet }}"
 #   tags:
 #     - pg-hba-conf
-- name: Restart services
-  ansible.builtin.shell:
-    cmd: docker-compose restart
-    chdir: "{{ acas_install_directory }}/acas_custom"
-  become: yes
-  become_user: acas
-  tags:
-    - pg-hba-conf
+# - name: Restart services
+#   ansible.builtin.shell:
+#     cmd: docker-compose restart
+#     chdir: "{{ acas_install_directory }}/acas_custom"
+#   become: yes
+#   become_user: acas
+#   tags:
+#     - pg-hba-conf
 - name: Add api views installation script
   template:
     src: templates/copy_api_views_to_db_container.sh
