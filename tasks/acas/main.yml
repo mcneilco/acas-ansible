@@ -397,6 +397,8 @@
     # - start-acas
     - restore-acas
     - update-certs
+  when: restore is defined
+
 # - name: Configure postgres ssl users
 #   postgresql_pg_hba:
 #     dest: "{{ acas_install_directory }}/dbstore/pg_hba.conf"

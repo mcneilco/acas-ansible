@@ -1,4 +1,6 @@
 #!/bin/bash
+echo `date`
+echo "docker down"
 docker compose down
 docker compose up -d
 echo "waiting for initial acas startup to complete"
@@ -23,4 +25,5 @@ docker compose logs -f --tail 0 acas | while read -r line; do
 	fi
 done
 echo "restart madness all done"
+echo `date`
 exit 0
