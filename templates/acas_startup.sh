@@ -2,7 +2,7 @@
 echo `date`
 echo "docker down"
 docker compose down
-docker compose up -d
+docker compose up -d --build
 echo "waiting for initial acas startup to complete"
 docker compose logs -f --tail 0 acas | while read -r line; do
 	if echo "$line" | grep -q "Bootstrap called successfully"; then
